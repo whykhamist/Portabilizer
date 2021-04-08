@@ -39,6 +39,37 @@ namespace Systems
 			}
 		}
 
+		public static bool DeleteSymLink(string path)
+		{
+			bool output = true;
+            if (IsSymLink(path))
+            {
+				Directory.Delete(path);
+            }
+			return output;
+		}
+
+		public static bool IsSymLink(string filePath)
+		{
+			bool output = false;
+
+			DirectoryInfo DI = new(filePath);
+			bool hasReparse = DI.Attributes.HasFlag(FileAttributes.ReparsePoint);
+			if (hasReparse)
+			{
+                var ptr = NativeMethods.FindFirstFile(filePath, out NativeMethods.WIN32_FIND_DATA wfd);
+				output = wfd.dwReserved0 == NativeMethods.IO_REPARSE_TAG_SYMLINK;
+				while(NativeMethods.FindNextFile(ptr, out wfd))
+                {
+					output = (wfd.dwReserved0 == NativeMethods.IO_REPARSE_TAG_SYMLINK);
+                }
+
+				ptr.Dispose();
+			}
+
+			return output;
+		}
+
 		public static string GetFinalPathName(string path)
 		{
 			return NativeMethods.GetFinalPathName(path);

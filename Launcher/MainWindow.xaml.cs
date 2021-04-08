@@ -59,6 +59,8 @@ namespace Launcher
         private async Task ApplyFixes(CancellationToken cancelToken = default)
         {
 
+            Dictionary<string, string> TmpFolderToCopy = new();
+
             try
             {
                 double CurrentProgress = 0d;
@@ -101,7 +103,7 @@ namespace Launcher
                 string portableDataPath = Path.GetFullPath(Configuration.DataFolder);
                 SecureDirectory(portableDataPath);
 
-                Dictionary<string, string> TmpFolderToCopy = Configuration.DataPaths.Simplify(portableDataPath);
+                TmpFolderToCopy = Configuration.DataPaths.Simplify(portableDataPath);
 
                 await CopyFolders(await GatherFoldersToCopy(TmpFolderToCopy), copyProgress, cancelToken);
                 CurrentProgress += ProgressIncrease;
@@ -120,12 +122,15 @@ namespace Launcher
                 DisplayMessage($"Updating the registry!");
 
                 string regPath = Path.Combine(portableDataPath, "Registries");
-                SecureDirectory(regPath);
-                DirectoryInfo regFolder = new DirectoryInfo(regPath);
-                FileInfo[] regFiles = regFolder.GetFiles("*.preg");
-                if (regFiles.Length > 0)
+                //SecureDirectory(regPath);
+                DirectoryInfo regFolder = new(regPath);
+                if (regFolder.Exists)
                 {
-                    RestoreRegistries(regFiles);
+                    FileInfo[] regFiles = regFolder.GetFiles("*.preg");
+                    if (regFiles.Length > 0)
+                    {
+                        RestoreRegistries(regFiles);
+                    }
                 }
 
                 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
@@ -167,6 +172,16 @@ namespace Launcher
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message);
+            }
+            finally
+            {
+                if (Configuration.ClearSymlinks && TmpFolderToCopy.Count > 0)
+                {
+                    foreach(KeyValuePair<string, string> kvp in TmpFolderToCopy)
+                    {
+                        SystemFunctions.DeleteSymLink(kvp.Key);
+                    }
+                }
             }
         }
 

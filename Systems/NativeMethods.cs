@@ -10,6 +10,26 @@ namespace Systems
 	internal class NativeMethods
 	{
 		private static readonly IntPtr INVALID_HANDLE_VALUE = new(-1);
+		public static readonly uint IO_REPARSE_TAG_SYMLINK = 0xA000000C;
+		public static readonly int FILE_ATTRIBUTE_REPARSE_POINT = 0x10;
+
+		[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+		public struct WIN32_FIND_DATA
+		{
+			public uint dwFileAttributes;
+			public System.Runtime.InteropServices.ComTypes.FILETIME ftCreationTime;
+			public System.Runtime.InteropServices.ComTypes.FILETIME ftLastAccessTime;
+			public System.Runtime.InteropServices.ComTypes.FILETIME ftLastWriteTime;
+			public uint nFileSizeHigh;
+			public uint nFileSizeLow;
+			public uint dwReserved0;
+			public uint dwReserved1;
+			[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
+			public string cFileName;
+			[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 14)]
+			public string cAlternateFileName;
+		}
+
 
 		[DllImport("Kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
 		private static extern uint GetFinalPathNameByHandle(IntPtr hFile, [MarshalAs(UnmanagedType.LPTStr)] StringBuilder lpszFilePath, uint cchFilePath, uint dwFlags);
@@ -24,6 +44,14 @@ namespace Systems
 		[DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
 		public static extern bool CreateSymbolicLink(string lpSymlinkFileName, string lpTargetFileName, SymLinkType dwFlags);
 
+		[DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+		public static extern SafeFindHandle FindFirstFile(string lpFileName, out WIN32_FIND_DATA lpFindFileData);
+
+		[DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+		public static extern bool FindNextFile(SafeFindHandle hFindFile, out WIN32_FIND_DATA lpFindFileData);
+
+		[DllImport("kernel32.dll", SetLastError = true)]
+		public static extern bool FindClose(IntPtr hFindFile);
 
 		public static string GetFinalPathName(string path)
 		{
