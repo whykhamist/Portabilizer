@@ -9,6 +9,7 @@ using System.IO;
 using System.Threading;
 using System.Diagnostics;
 using Path = System.IO.Path;
+using System.Windows.Media.Imaging;
 
 namespace Launcher
 {
@@ -17,7 +18,7 @@ namespace Launcher
     /// </summary>
     public partial class MainWindow : Window
     {
-        private IConfiguration Configuration
+        private static IConfiguration Configuration
         {
             get
             {
@@ -45,6 +46,17 @@ namespace Launcher
         {
             DisplayMessage("Initializing!");
 
+            if (File.Exists("favico.ico"))
+            {
+                Uri iconUri = new(@"favico.ico", UriKind.RelativeOrAbsolute);
+                //Icon = BitmapFrame.Create(iconUri);
+                Icon = new BitmapImage(iconUri);
+            }
+            else if (Factory.Plugin.IconBytes.Length > 0)
+            {
+                Icon = LoadImage(Factory.Plugin.IconBytes);
+            }
+
             this.TitleBlock.Text = Configuration.Title;
             this.Width = Configuration.Width;
             this.Height = Configuration.Height;
@@ -68,8 +80,9 @@ namespace Launcher
                 TimeSpan ts = TimeSpan.FromMilliseconds(250);
                 if (!File.Exists(Configuration.Executable))
                 {
-                    MessageBox.Show("Application not found!");
-                    this.Close();
+                    //MessageBox.Show("Application not found!");
+                    throw new Exception("Application not found!");
+
                 }
 
                 DisplayMessage("Closing running Launcher!");
@@ -150,13 +163,13 @@ namespace Launcher
                 }
 
                 DisplayMessage("Done!");
-                await Task.Delay(300);
+                await Task.Delay(300, cancelToken);
 
                 FixProgress.SetPercent(100, TimeSpan.FromMilliseconds(10));
                 DisplayMessage("Starting Epic Games Launcher!");
 
                 this.Visibility = Visibility.Hidden;
-                await Task.Delay(10);
+                await Task.Delay(10, cancelToken);
                 //if(Factory.Plugin.Fix.ExecuteApplication())
                 string executableFullPath = Path.GetFullPath(Configuration.Executable); //new FileInfo(Configuration.Executable).FullName;
                 try
@@ -167,7 +180,6 @@ namespace Launcher
                 {
                     LaunchApplication(executableFullPath, Environment.GetCommandLineArgs());
                 }
-                this.Close();
             }
             catch (Exception ex)
             {
@@ -183,9 +195,10 @@ namespace Launcher
                     }
                 }
             }
+            this.Close();
         }
 
-        private void RestoreRegistries(FileInfo[] files)
+        private static void RestoreRegistries(FileInfo[] files)
         {
             foreach (FileInfo RegFile in files)
             {
@@ -197,8 +210,25 @@ namespace Launcher
                 RestoreRegistry(File.ReadAllText(RegFile.FullName));
             }
         }
+        private static BitmapImage LoadImage(byte[] imageData)
+        {
+            if (imageData == null || imageData.Length == 0) return null;
+            var image = new BitmapImage();
+            using (var mem = new MemoryStream(imageData))
+            {
+                mem.Position = 0;
+                image.BeginInit();
+                image.CreateOptions = BitmapCreateOptions.PreservePixelFormat;
+                image.CacheOption = BitmapCacheOption.OnLoad;
+                image.UriSource = null;
+                image.StreamSource = mem;
+                image.EndInit();
+            }
+            image.Freeze();
+            return image;
+        }
 
-        private void RestoreRegistry(string Content)
+        private static void RestoreRegistry(string Content)
         {
             if (!string.IsNullOrWhiteSpace(Content))
             {
@@ -208,13 +238,13 @@ namespace Launcher
             }
         }
 
-        private void SecureDirectory(string Path)
+        private static void SecureDirectory(string Path)
         {
             if (!Directory.Exists(Path))
             { Directory.CreateDirectory(Path); }
         }
 
-        private async Task CloseRunningLauncher()
+        private static async Task CloseRunningLauncher()
         {
             Process[] tmpPrcs = Process.GetProcessesByName("EpicGamesLauncher");
             foreach (Process tp in tmpPrcs)
@@ -224,7 +254,7 @@ namespace Launcher
             }
         }
 
-        private void LaunchApplication(string AppExec, string[] args)
+        private static void LaunchApplication(string AppExec, string[] args)
         {
             Process Exec = new()
             {
@@ -239,7 +269,7 @@ namespace Launcher
             Exec.WaitForExit();
         }
 
-        private bool WillCopyFolder(string sourcePath, string targetPath)
+        private static bool WillCopyFolder(string sourcePath, string targetPath)
         {
             bool output = false;
 
@@ -253,7 +283,7 @@ namespace Launcher
             return output;
         }
 
-        private bool WillMakeSymLink(string sourcePath, string targetPath)
+        private static bool WillMakeSymLink(string sourcePath, string targetPath)
         {
             bool output = false;
             string link = string.Empty;
@@ -268,9 +298,9 @@ namespace Launcher
             return output;
         }
 
-        private async Task<Dictionary<string, string>> GatherFoldersToCopy(Dictionary<string, string> dataPaths)
+        private static async Task<Dictionary<string, string>> GatherFoldersToCopy(Dictionary<string, string> dataPaths)
         {
-            Dictionary<string, string> TmpFolderToCopy = new Dictionary<string, string>();
+            Dictionary<string, string> TmpFolderToCopy = new();
             foreach (KeyValuePair<string, string> path in dataPaths)
             {
                 if (WillCopyFolder(path.Key, path.Value))
@@ -283,7 +313,7 @@ namespace Launcher
             return TmpFolderToCopy;
         }
 
-        private async Task CopyFolders(Dictionary<string, string> Folders, IProgress<FixProgress> progress = null, CancellationToken cancelToken = default)
+        private static async Task CopyFolders(Dictionary<string, string> Folders, IProgress<FixProgress> progress = null, CancellationToken cancelToken = default)
         {
             if (Folders.Count > 0)
             {
@@ -291,7 +321,7 @@ namespace Launcher
                 foreach (KeyValuePair<string, string> kvp in Folders)
                 {
                     ctr++;
-                    FixProgress copyProgress = new FixProgress();
+                    FixProgress copyProgress = new();
                     var FPI = new Progress<FolderCopyProgressInfo>(prog => {
                         copyProgress.Progress = ((prog.Progress * ctr) / (100 * Folders.Count)) * 100;
                         copyProgress.StatusMessage = prog.FileName;

@@ -1,4 +1,5 @@
-﻿
+﻿using System;
+
 namespace Configuration
 {
     public interface IPlugin
@@ -8,5 +9,7 @@ namespace Configuration
         IFix Fix { get; }
 
         string RegistryContent { get; }
+
+        byte[] IconBytes { get; }
     }
 }
