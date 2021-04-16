@@ -55,4 +55,4 @@ Your registry file may contain the following blocks: (*only 2 at the moment. I c
 	
 # Plugin (Portable.dll)
 If your app needs more work to go portable, create a "__Portable.dll__" for it. 
-(Will update this document soon.)
+Refer to [this](https://github.com/whykhamist/Portabilizer_Plugin) repo 
