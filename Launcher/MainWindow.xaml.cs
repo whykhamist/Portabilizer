@@ -150,7 +150,6 @@ namespace Launcher
 
                 if (Factory.Plugin != null)
                 {
-                    MessageBox.Show(Systems.Registry.Helpers.ValueFormat(Factory.Plugin.RegistryContent));
                     RestoreRegistry(Factory.Plugin.RegistryContent);
 
                     var PostProgress = new Progress<FixProgress>(postProgress =>
