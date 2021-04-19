@@ -64,6 +64,16 @@ namespace Launcher
 
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
+
+            string mutexName = @$"Global\{Configuration.Title.Replace(" ", "_")}";
+            var mutex = new Mutex(true, mutexName, out var createdNew);
+
+            if (!createdNew)
+            {
+                MessageBox.Show($"{Configuration.Title} is already running! Exiting the application.");
+                Environment.Exit(0);
+            }
+
             _cancelSource = new CancellationTokenSource();
             await ApplyFixes(_cancelSource.Token);
         }
