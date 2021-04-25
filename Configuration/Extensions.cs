@@ -7,7 +7,7 @@ namespace Configuration
 {
     public static class Extensions
     {
-        public static Config Merge(this IConfiguration def, IConfiguration config)
+        public static Config Merge(this IConfiguration def, IConfiguration config, bool mergeDataPaths = true)
         {
             //foreach (PropertyInfo PI in typeof(IConfiguration).GetProperties())
             //{
@@ -26,8 +26,10 @@ namespace Configuration
                 PropertyNameComparison = StringComparison.OrdinalIgnoreCase
             });
             var output = configInto.ToObject<Config>();
-
-            output.DataPaths = def.DataPaths.Merge(config.DataPaths);
+            if (mergeDataPaths)
+            {
+                output.DataPaths = def.DataPaths.Merge(config.DataPaths);
+            }
             output.Width = (config.Width < 0) ? def.Width : config.Width;
             output.Height = (config.Height < 0) ? def.Height : config.Height;
 
