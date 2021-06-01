@@ -54,7 +54,8 @@ namespace Launcher
             }
             else if (Factory.Plugin.IconBytes.Length > 0)
             {
-                Icon = Systems.Helpers.LoadImageFromBytes(Factory.Plugin.IconBytes);
+
+                Icon = Helpers.LoadImageFromBytes(Factory.Plugin.IconBytes);
             }
 
             this.TitleBlock.Text = Configuration.Title;
